@@ -25,8 +25,8 @@ __all__ = ['Remote Local']  # TODO: this doesn't work
 
 class Iter:
     '''
-    ids: a list of ints between 1 and 108077. None means all.
-    returns: (image metadata, region descriptions, scene graph).  # TODO: get a list of region graphs instead!
+    ids: [int] A list of image ids. None means all.
+    returns: [tuple] (image metadata, region descriptions, scene graph).  # TODO: get a list of region graphs instead!
     '''
     def __init__(me, ids=None):
         super().__init__(ids)
@@ -45,31 +45,30 @@ class Remote(Iter):
 
     def __iter__(me):
         for id in me.ids:
-            image = vgr.get_image_data(id)
-            print('before', id)
             regions = vgr.get_region_descriptions_of_image(id)
-            print('after')
-            graph = vgr.get_scene_graph(id)
+            image = regions[0].image
+            graph = vgr.get_scene_graph_of_image(id)  # slow
             yield image, regions, graph
 
 
 class Local(Iter):
-    '''data_dir: Gets created and overwritten with 2.3GB of cached data.'''
+    '''data_dir: [string] Gets created and overwritten with 2.3GB of cached data.'''
     def __init__(me, ids, data_dir='./data/'):
         me.data_dir = data_dir
         me.download_dataset(me.data_dir)
 
-        images = vgl.get_all_image_data(data_dir)
         all_regions = vgl.get_all_region_descriptions(data_dir)  # slow
+        me.all_regions = {r[0].image.id: r for r in all_regions}
+
         if ids is None:
-            ids = list(range(1, len(images)+1))
+            ids = vgr.get_all_image_ids()
         me.ids = ids
 
 
     def __iter__(me):
         for id in me.ids:
-            image = images[id-1]
-            regions = all_regions[id-1]
+            regions = me.all_regions[id]
+            image = regions[0].image
             graph = vgl.get_scene_graph(id
                                        ,images=me.data_dir
                                        ,image_data_dir=me.data_dir+'/by-id/'
@@ -101,8 +100,10 @@ class Local(Iter):
 
 
 def main():
-    from random import randint
-    ids = [randint(1, 108077) for i in range(20)]
+    from random import sample
+    all_ids = vgr.get_all_image_ids()  # TODO: picle to a file
+    ids = sample(all_ids, 20)
+
     remote = Remote(ids)
     local = Local(ids)
     for r, l  in zip(remote, local):
