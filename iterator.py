@@ -35,7 +35,7 @@ class Iter:
 
     def __iter__(me):
         '''returns: [tuple] (image metadata, regions in image, scene graph).'''
-
+#TODO: add constructor sample(int) which iterates n random images
 
 class Remote(Iter):
     def __init__(me, ids):
@@ -122,6 +122,7 @@ class Local(Iter):
 # TODO: split this horror into profile() and verify()
 # TODO: figure out python's object comparrison rules
 # perhaps do all(a == b for a, b in izip_longest(gen_1, gen_2, fillvalue=sentinel))
+# or str(l) == str(r)
 def main():
     from random import sample
     from time import time
