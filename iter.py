@@ -19,33 +19,50 @@ from PIL import Image
 import urllib
 from visual_genome import api as vgr
 from visual_genome import local as vgl
+from visual_genome.models import Image as ImgHeader
+from visual_genome.models import Region
 from zipfile import ZipFile
 
 
+# Picture identifier.
+ID = int
+
+
 class Iter:
-    def __init__(me, ids=None):
-        '''ids: [int] A list of image ids. None means all.'''
-        raise NotImplementedError('This is an abstract base class.'
-                                  'Please use on of the derived classes instead.')
+    ERR = NotImplementedError('This is an abstract base class.'
+                              'Please use one of the derived classes instead.')
 
 
-    def get_all_image_ids(me):
-        '''returns: [list] the ids of all images in the visual genome.'''
+    def __init__(me, ids: [ID]=None):
+        '''ids: A list of image ids. None means all.'''
+        raise ERR
 
 
-    def __iter__(me):
+    @staticmethod
+    def sample(n: int):
+        '''Alternative c-tor. Iterate over n random images.'''
+        raise ERR
+
+
+    def get_all_image_ids(me) -> [ID]:
+        '''returns: the ids of all images in the visual genome.'''
+        raise ERR
+
+
+    def __iter__(me) -> (ImgHeader, Region, None):  # TODO!
         '''returns: [tuple] (image metadata, regions in image, scene graph).'''
-#TODO: add constructor sample(int) which iterates n random images
+        raise ERR
+
 
 class Remote(Iter):
-    def __init__(me, ids):
+    def __init__(me, ids: [ID]):
         if ids is None:
             ids = me.get_all_image_ids()
         me.ids = ids
 
 
     @staticmethod
-    def get_all_image_ids():
+    def get_all_image_ids() -> [ID]:
         return vgr.get_all_image_ids()
 
 
@@ -53,14 +70,14 @@ class Remote(Iter):
         for id in me.ids:
             regions = vgr.get_region_descriptions_of_image(id)
             image = regions[0].image
- #           graph = vgr.get_scene_graph_of_image(id)  # slow
+            # graph = vgr.get_scene_graph_of_image(id)  # slow
             graph = None
             yield image, regions, graph
 
 
 class Local(Iter):
-    def __init__(me, ids, data_dir='./data/'):
-        '''data_dir: [string] Gets created and overwritten with 2.3GB of cached data.'''
+    def __init__(me, ids: [ID], data_dir: str='./data/'):
+        '''data_dir: Gets created and overwritten with 2.3GB of cached data.'''
         me.data_dir = data_dir
         me.download_dataset(me.data_dir)
 
@@ -75,7 +92,7 @@ class Local(Iter):
         me.ids = ids
 
 
-    def get_all_image_ids(me):
+    def get_all_image_ids(me) -> [ID]:
         with open(me.data_dir+'/all_image_ids', 'rb') as f:
             return pickle.load(f)
 
