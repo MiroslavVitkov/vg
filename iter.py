@@ -2,12 +2,12 @@
 
 
 '''
-This module provides two iterators over the Visual Genome data.
+This module provides two iterators over the Visual Genome dataset.
 
 The remote iterator works over http.
 The local iterator caches about 2.3GB of metadata,
-but image pixel data and scene graphs are still retrieved via http.
-because of their large size, the underlying library doesn't support
+but pixel data and scene graphs are still retrieved via http.
+Because of their large size, the underlying library doesn't support
 caching them.
 '''
 
