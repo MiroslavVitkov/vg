@@ -16,6 +16,7 @@ from io import BytesIO
 from os.path import isfile, isdir
 import pickle
 from PIL import Image
+from random import sample
 import urllib
 from visual_genome import api as vgr
 from visual_genome import local as vgl
@@ -136,41 +137,52 @@ class Local(Iter):
                 pickle.dump(ids, f)
 
 
-# TODO: split this horror into profile() and verify()
+class Test:
+    def __init__(me, datapoints=1):
+        me.datapoints = datapoints
+        all_ids = Remote.get_all_image_ids()
+        me.ids = sample(all_ids, datapoints)
+
+        # Lazisy evaluated i.e. in profile().
+        me.remote = Remote(me.ids)
+        me.local = Local(me.ids)
+
+
+    def profile(me):
+        '''Force instantination and measure time spent.'''
+        from time import time
+
+        start = time()
+        rem = list(me.remote)
+        print('Time to read one record remotely:', (time()-start)/points, 'seconds.')
+
+        start = time()
+        loc = list(me.local)
+        print('Time to read one record locally:', (time()-start)/points, 'seconds.')
+
+        return rem, loc
+
+
+    def verify(me):
+        '''Ensure local storage works just like fetching online.'''
+        rem, loc = profile()
+        for r, l  in zip(rem, loc):
+            print('========================== r0 =============================')
+            print(r[0])
+            print('========================== l0 =============================')
+            print(l[0])
+            assert r[0].id == l[0].id
+            assert r[0].coco_id == l[0].coco_id
+            assert r[0].id == l[0].id
+            assert r[0].id == l[0].id
+
+#           assert r[1] == l[1]
+#           assert r[2] == l[2]
 # TODO: figure out python's object comparrison rules
 # perhaps do all(a == b for a, b in izip_longest(gen_1, gen_2, fillvalue=sentinel))
 # or str(l) == str(r)
-def main():
-    from random import sample
-    from time import time
-    points = 1
-
-    all_ids = Remote.get_all_image_ids()
-    ids = sample(all_ids, points)
-
-    remote = Remote(ids)
-    local = Local(ids)
-
-    start = time()
-    rem = list(remote)
-    print('Time to read one record remotely:', (time()-start)/points, 'seconds.')
-
-    start = time()
-    loc = list(local)
-    print('Time to read one record locally:', (time()-start)/points, 'seconds.')
-
-    for r, l  in zip(rem, loc):
-        print('========================== r0 =============================')
-        print(r[0])
-        print('========================== l0 =============================')
-        print(l[0])
-        assert r[0].id == l[0].id
-        assert r[0].coco_id == l[0].coco_id
-        assert r[0].id == l[0].id
-        assert r[0].id == l[0].id
-#        assert r[1] == l[1]
-#        assert r[2] == l[2]
 
 
 if __name__ == '__main__':
-    main()
+    test = Test()
+    test.verify()
