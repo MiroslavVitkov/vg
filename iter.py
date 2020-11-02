@@ -139,9 +139,11 @@ class Local(Iter):
 
 class Test:
     def __init__(me, datapoints=1):
-        me.datapoints = datapoints
+        print('Getting image IDs. '
+              'For some reason, this is an extremely slow operation(~3 min).')
         all_ids = Remote.get_all_image_ids()
         me.ids = sample(all_ids, datapoints)
+        print('Fetched', len(all_ids), 'ids.')
 
         # Lazisy evaluated i.e. in profile().
         me.remote = Remote(me.ids)
@@ -154,18 +156,18 @@ class Test:
 
         start = time()
         rem = list(me.remote)
-        print('Time to read one record remotely:', (time()-start)/points, 'seconds.')
+        print('Tme to read one record remotely:', (time()-start)/len(me.ids), 'seconds.')
 
         start = time()
         loc = list(me.local)
-        print('Time to read one record locally:', (time()-start)/points, 'seconds.')
+        print('Time to read one record locally:', (time()-start)/len(me.ids), 'seconds.')
 
         return rem, loc
 
 
     def verify(me):
         '''Ensure local storage works just like fetching online.'''
-        rem, loc = profile()
+        rem, loc = me.profile()
         for r, l  in zip(rem, loc):
             print('========================== r0 =============================')
             print(r[0])
